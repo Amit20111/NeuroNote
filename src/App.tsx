@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import './index.css';
-import HomePage from './pages/HomePage';
-import StudySessionPage from './pages/StudySessionPage';
-import LibraryPage from './pages/LibraryPage';
-import SettingsPage from './pages/SettingsPage';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import AuthPage from './pages/AuthPage';
+
+// Lazy load pages for performance
+const HomePage = React.lazy(() => import('./pages/HomePage'));
+const StudySessionPage = React.lazy(() => import('./pages/StudySessionPage'));
+const LibraryPage = React.lazy(() => import('./pages/LibraryPage'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 
 function getRoute(): string {
   const hash = window.location.hash.replace('#/', '').replace('#', '');
@@ -23,10 +27,12 @@ const NAV_ITEMS: NavItem[] = [
   { route: 'settings', label: 'Settings', icon: '⚙️' },
 ];
 
-export default function App() {
+function MainApp() {
   const [route, setRoute] = useState<string>(getRoute());
   const [studyData, setStudyData] = useState<any>(null); // Replace any broadly with proper StudyData
   const [settingsWarning, setSettingsWarning] = useState<string>('');
+
+  const { logout, user } = useAuth();
 
   useEffect(() => {
     const onHash = () => setRoute(getRoute());
@@ -44,6 +50,11 @@ export default function App() {
       setSettingsWarning('');
     }
     window.location.hash = '#/' + path;
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('');
   };
 
   const renderPage = () => {
@@ -84,8 +95,40 @@ export default function App() {
             </a>
           ))}
         </nav>
+        <div className="sidebar-footer" style={{ marginTop: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {user && (
+            <div className="user-email" style={{ fontSize: '0.8rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user.email}
+            </div>
+          )}
+          <button 
+            onClick={handleLogout}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-secondary)',
+              padding: '0.5rem',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              transition: 'all 0.2s',
+              width: '100%',
+              textAlign: 'center'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.borderColor = 'var(--text-secondary)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
+            }}
+          >
+            {user ? 'Log Out' : 'Exit Guest Mode'}
+          </button>
+        </div>
         <div style={{
-          padding: '0 var(--space-lg)',
+          padding: '1rem var(--space-lg)',
           fontFamily: 'var(--font-mono)',
           fontSize: '0.65rem',
           color: 'var(--text-muted)',
@@ -98,8 +141,40 @@ export default function App() {
 
       {/* Main Content */}
       <main className="main-content">
-        {renderPage()}
+        <Suspense fallback={
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <div className="spinner" style={{ width: '40px', height: '40px', borderTopColor: 'var(--primary)' }}></div>
+          </div>
+        }>
+          {renderPage()}
+        </Suspense>
       </main>
     </div>
+  );
+}
+
+function AppContent() {
+  const { user, isGuest, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--bg-primary)' }}>
+        <div className="spinner" style={{ width: '50px', height: '50px', borderTopColor: 'var(--primary)' }}></div>
+      </div>
+    );
+  }
+  
+  if (!user && !isGuest) {
+    return <AuthPage onNavigate={(route) => window.location.hash = '#/' + route} />;
+  }
+  
+  return <MainApp />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

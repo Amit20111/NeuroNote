@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import storage from '../services/storage';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 
 interface StudySessionPageProps {
   studyData: any;
@@ -12,6 +14,8 @@ export default function StudySessionPage({ studyData, onNavigate }: StudySession
   const availableTabs: string[] = selectedOutputs?.filter((t: string) => data?.[t]) || [];
   const [activeTab, setActiveTab] = useState<string>(availableTabs[0] || 'notes');
   const [saved, setSaved] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
+  const { user, isGuest } = useAuth();
 
   if (!studyData) {
     return (
@@ -43,15 +47,31 @@ export default function StudySessionPage({ studyData, onNavigate }: StudySession
     );
   }
 
-  const handleSave = () => {
-    storage.saveToLibrary({
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    const entryData = {
       title,
       sourceType,
       sourceRef: sourceType === 'web' || sourceType === 'youtube' ? data.url || '' : '',
       results: data,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+      date: new Date().toISOString()
+    };
+
+    try {
+      if (user) {
+        await api.saveToLibrary(entryData);
+      } else if (isGuest) {
+        storage.saveToLibrary(entryData);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error('Failed to save:', err);
+      alert('Failed to save to library');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const TAB_LABELS: Record<string, string> = {
@@ -72,8 +92,8 @@ export default function StudySessionPage({ studyData, onNavigate }: StudySession
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('')}>
             ← New
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saved}>
-            {saved ? '✓ Saved!' : '💾 Save to Library'}
+          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saved || saving}>
+            {saving ? 'Saving...' : saved ? '✓ Saved!' : '💾 Save to Library'}
           </button>
         </div>
       </div>

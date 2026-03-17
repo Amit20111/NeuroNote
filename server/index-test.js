@@ -1,0 +1,1 @@
+const mongoose = require('mongoose'); const User = require('./models/User'); mongoose.connect('mongodb://127.0.0.1:27017/neuronote').then(async () => { try { const user = new User({email: 'test' + Date.now() + '@example.com', password: 'test'}); await user.save(); console.log('Saved'); } catch (e) { console.error('Save error', e); } process.exit(0); });

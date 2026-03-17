@@ -1,0 +1,17 @@
+{
+  "users": [
+    {
+      "email": "test5@example.com",
+      "password": "$2b$10$DR9R/TVJAlZiAXdl91CHwOvRndPMXEn/U9OEjiPST/ifHzkojWTqW",
+      "_id": "3ik878z53mmumg7ty",
+      "createdAt": "2026-03-17T13:01:54.982Z"
+    },
+    {
+      "email": "blacknight7830@gmail.com",
+      "password": "$2b$10$RWQg8/FBbe8QWKn52q2kU.Vbu.vnPUwoISCAQ4b4TAoL24FYWxnUa",
+      "_id": "adx24fjlammumiq84",
+      "createdAt": "2026-03-17T13:03:52.132Z"
+    }
+  ],
+  "library": []
+}

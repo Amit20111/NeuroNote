@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { fetchContent } from '../services/jina';
 import { generateStudyMaterials } from '../services/llm';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -17,6 +17,8 @@ const OUTPUT_TYPES = [
   { id: 'quiz', label: 'Quiz' },
   { id: 'summary', label: 'Summary' },
 ];
+
+const generationCache = new Map<string, any>();
 
 interface HomePageProps {
   onNavigate: (path: string, data?: any) => void;
@@ -40,13 +42,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   // Configure pdfjs worker
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-  const toggleOutput = (id: string) => {
+  const toggleOutput = useCallback((id: string) => {
     setSelectedOutputs(prev =>
       prev.includes(id) ? prev.filter(o => o !== id) : [...prev, id]
     );
-  };
+  }, []);
 
-  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePdfChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
@@ -54,15 +56,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       return;
     }
     await processPdf(file);
-  };
+  }, []);
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type === 'application/pdf') {
       await processPdf(file);
     }
-  };
+  }, []);
 
   const processPdf = async (file: File) => {
     setPdfFile(file);
@@ -120,7 +122,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         content = pasteText.trim();
       }
 
-      const results = await generateStudyMaterials(content, selectedOutputs);
+      const cacheKey = `${activeTab}:${content.length}:${content.substring(0, 50)}:${selectedOutputs.join(',')}`;
+      
+      let results;
+      if (generationCache.has(cacheKey)) {
+        results = generationCache.get(cacheKey);
+      } else {
+        results = await generateStudyMaterials(content, selectedOutputs);
+        generationCache.set(cacheKey, results);
+      }
 
       onNavigate('study', {
         data: results,
