@@ -18,31 +18,35 @@ const OUTPUT_TYPES = [
   { id: 'summary', label: 'Summary' },
 ];
 
-export default function HomePage({ onNavigate }) {
+interface HomePageProps {
+  onNavigate: (path: string, data?: any) => void;
+}
+
+export default function HomePage({ onNavigate }: HomePageProps) {
   const settings = storage.getSettings();
-  const [activeTab, setActiveTab] = useState('youtube');
-  const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [webUrl, setWebUrl] = useState('');
-  const [pasteText, setPasteText] = useState('');
-  const [pdfFile, setPdfFile] = useState(null);
-  const [pdfText, setPdfText] = useState('');
-  const [selectedOutputs, setSelectedOutputs] = useState(settings.defaultOutputs || ['notes', 'flashcards', 'quiz', 'summary']);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [fetchingUrl, setFetchingUrl] = useState(false);
-  const [fetchingPdf, setFetchingPdf] = useState(false);
-  const fileRef = useRef(null);
+  const [activeTab, setActiveTab] = useState<string>('youtube');
+  const [youtubeUrl, setYoutubeUrl] = useState<string>('');
+  const [webUrl, setWebUrl] = useState<string>('');
+  const [pasteText, setPasteText] = useState<string>('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfText, setPdfText] = useState<string>('');
+  const [selectedOutputs, setSelectedOutputs] = useState<string[]>(settings.defaultOutputs || ['notes', 'flashcards', 'quiz', 'summary']);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [fetchingUrl, setFetchingUrl] = useState<boolean>(false);
+  const [fetchingPdf, setFetchingPdf] = useState<boolean>(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // Configure pdfjs worker
   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
-  const toggleOutput = (id) => {
+  const toggleOutput = (id: string) => {
     setSelectedOutputs(prev =>
       prev.includes(id) ? prev.filter(o => o !== id) : [...prev, id]
     );
   };
 
-  const handlePdfChange = async (e) => {
+  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.type !== 'application/pdf') {
@@ -52,7 +56,7 @@ export default function HomePage({ onNavigate }) {
     await processPdf(file);
   };
 
-  const handleDrop = async (e) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type === 'application/pdf') {
@@ -60,7 +64,7 @@ export default function HomePage({ onNavigate }) {
     }
   };
 
-  const processPdf = async (file) => {
+  const processPdf = async (file: File) => {
     setPdfFile(file);
     setFetchingPdf(true);
     setError('');
@@ -71,7 +75,7 @@ export default function HomePage({ onNavigate }) {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        fullText += textContent.items.map(s => s.str).join(' ') + '\\n';
+        fullText += textContent.items.map((s: any) => s.str).join(' ') + '\\n';
       }
       setPdfText(fullText);
     } catch (err) {
@@ -93,7 +97,6 @@ export default function HomePage({ onNavigate }) {
 
     let content = '';
     let sourceType = activeTab;
-    let pdfData = null;
 
     try {
       setLoading(true);
@@ -125,7 +128,7 @@ export default function HomePage({ onNavigate }) {
         title: deriveTitle(activeTab, youtubeUrl, webUrl, pdfFile, pasteText),
         selectedOutputs,
       });
-    } catch (err) {
+    } catch (err: any) {
       setFetchingUrl(false);
       if (err.message.startsWith('MALFORMED_JSON:')) {
         const rawText = err.message.slice('MALFORMED_JSON:'.length);
@@ -296,7 +299,7 @@ export default function HomePage({ onNavigate }) {
   );
 }
 
-function deriveTitle(tab, youtubeUrl, webUrl, pdfFile, text) {
+function deriveTitle(tab: string, youtubeUrl: string, webUrl: string, pdfFile: File | null, text: string): string {
   if (tab === 'youtube' && youtubeUrl) {
     try {
       const url = new URL(youtubeUrl);

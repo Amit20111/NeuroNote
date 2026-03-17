@@ -1,6 +1,6 @@
-import storage from './storage';
+import storage, { AppSettings } from './storage';
 
-function buildPrompt(content, selectedOutputs, settings) {
+function buildPrompt(content: string, selectedOutputs: string[], settings: AppSettings): string {
   const flashcardCount = settings?.flashcardCount || 10;
   const quizCount = settings?.quizCount || 7;
 
@@ -35,7 +35,7 @@ const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
-export async function generateStudyMaterials(content, selectedOutputs) {
+export async function generateStudyMaterials(content: string, selectedOutputs: string[]): Promise<any> {
   const baseUrl = GROQ_BASE_URL;
   const apiKey = GROQ_API_KEY;
   const model = GROQ_MODEL;

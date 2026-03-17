@@ -1,6 +1,6 @@
 const JINA_PREFIX = 'https://r.jina.ai/';
 
-export async function fetchContent(url) {
+export async function fetchContent(url: string): Promise<string> {
   if (!url || !url.trim()) {
     throw new Error('URL is required');
   }

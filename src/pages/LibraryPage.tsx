@@ -1,37 +1,42 @@
 import { useState, useEffect } from 'react';
-import storage from '../services/storage';
+import storage, { LibraryEntry } from '../services/storage';
 
-const SOURCE_ICONS = {
+const SOURCE_ICONS: Record<string, string> = {
   youtube: '▶',
   web: '🌐',
   pdf: '📄',
   text: '✏️',
 };
 
-export default function LibraryPage({ onNavigate }) {
-  const [library, setLibrary] = useState([]);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+interface LibraryPageProps {
+  onNavigate: (path: string, data?: any) => void;
+}
+
+export default function LibraryPage({ onNavigate }: LibraryPageProps) {
+  const [library, setLibrary] = useState<LibraryEntry[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     setLibrary(storage.getLibrary());
   }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: string) => {
     storage.deleteFromLibrary(id);
     setLibrary(storage.getLibrary());
     setDeleteConfirm(null);
   };
 
-  const handleOpen = (entry) => {
+  const handleOpen = (entry: LibraryEntry) => {
     onNavigate('study', {
-      data: entry.data,
+      data: entry.results,
       sourceType: entry.sourceType,
       title: entry.title,
-      selectedOutputs: entry.selectedOutputs,
+      selectedOutputs: entry.results ? Object.keys(entry.results) : [],
     });
   };
 
-  const formatDate = (iso) => {
+  const formatDate = (iso?: string) => {
+    if (!iso) return '';
     try {
       return new Date(iso).toLocaleDateString('en-US', {
         month: 'short', day: 'numeric', year: 'numeric'
@@ -82,7 +87,7 @@ export default function LibraryPage({ onNavigate }) {
             </div>
 
             <div className="library-card-tags">
-              {entry.selectedOutputs?.map(t => (
+              {entry.results && Object.keys(entry.results).map(t => (
                 <span key={t} className="library-tag">{t}</span>
               ))}
             </div>
@@ -93,7 +98,7 @@ export default function LibraryPage({ onNavigate }) {
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)', marginRight: 'auto' }}>
                     Delete?
                   </span>
-                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(entry.id)}>
+                  <button className="btn btn-danger btn-sm" onClick={() => entry.id && handleDelete(entry.id)}>
                     Yes
                   </button>
                   <button className="btn btn-secondary btn-sm" onClick={() => setDeleteConfirm(null)}>
@@ -101,7 +106,7 @@ export default function LibraryPage({ onNavigate }) {
                   </button>
                 </>
               ) : (
-                <button className="btn btn-danger btn-sm" onClick={() => setDeleteConfirm(entry.id)}>
+                <button className="btn btn-danger btn-sm" onClick={() => entry.id && setDeleteConfirm(entry.id)}>
                   🗑 Delete
                 </button>
               )}

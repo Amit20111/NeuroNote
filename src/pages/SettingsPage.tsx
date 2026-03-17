@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import storage from '../services/storage';
+import storage, { AppSettings } from '../services/storage';
 
 const OUTPUT_OPTIONS = [
   { id: 'notes', label: 'Notes' },
@@ -8,19 +8,23 @@ const OUTPUT_OPTIONS = [
   { id: 'summary', label: 'Summary' },
 ];
 
-export default function SettingsPage({ warning }) {
-  const [settings, setSettings] = useState({
+interface SettingsPageProps {
+  warning?: string;
+}
+
+export default function SettingsPage({ warning }: SettingsPageProps) {
+  const [settings, setSettings] = useState<AppSettings>({
     defaultOutputs: ['notes', 'flashcards', 'quiz', 'summary'],
     flashcardCount: 10,
     quizCount: 7,
   });
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState<boolean>(false);
 
   useEffect(() => {
     setSettings(storage.getSettings());
   }, []);
 
-  const toggleOutput = (id) => {
+  const toggleOutput = (id: string) => {
     setSettings(prev => ({
       ...prev,
       defaultOutputs: prev.defaultOutputs.includes(id)

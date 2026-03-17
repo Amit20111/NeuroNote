@@ -5,12 +5,18 @@ import StudySessionPage from './pages/StudySessionPage';
 import LibraryPage from './pages/LibraryPage';
 import SettingsPage from './pages/SettingsPage';
 
-function getRoute() {
+function getRoute(): string {
   const hash = window.location.hash.replace('#/', '').replace('#', '');
   return hash || '';
 }
 
-const NAV_ITEMS = [
+interface NavItem {
+  route: string;
+  label: string;
+  icon: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
   { route: '', label: 'Home', icon: '⚡' },
   { route: 'study', label: 'Study', icon: '📖' },
   { route: 'library', label: 'Library', icon: '📚' },
@@ -18,9 +24,9 @@ const NAV_ITEMS = [
 ];
 
 export default function App() {
-  const [route, setRoute] = useState(getRoute());
-  const [studyData, setStudyData] = useState(null);
-  const [settingsWarning, setSettingsWarning] = useState('');
+  const [route, setRoute] = useState<string>(getRoute());
+  const [studyData, setStudyData] = useState<any>(null); // Replace any broadly with proper StudyData
+  const [settingsWarning, setSettingsWarning] = useState<string>('');
 
   useEffect(() => {
     const onHash = () => setRoute(getRoute());
@@ -28,7 +34,7 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  const navigate = (path, data) => {
+  const navigate = (path: string, data?: any) => {
     if (path === 'study' && data) {
       setStudyData(data);
     }
@@ -68,7 +74,7 @@ export default function App() {
               key={item.route}
               className={`nav-item ${route === item.route ? 'active' : ''}`}
               href={`#/${item.route}`}
-              onClick={e => {
+              onClick={(e: React.MouseEvent) => {
                 e.preventDefault();
                 navigate(item.route);
               }}

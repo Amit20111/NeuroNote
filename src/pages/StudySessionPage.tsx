@@ -1,12 +1,17 @@
 import { useState } from 'react';
 import storage from '../services/storage';
 
-export default function StudySessionPage({ studyData, onNavigate }) {
+interface StudySessionPageProps {
+  studyData: any;
+  onNavigate: (path: string, data?: any) => void;
+}
+
+export default function StudySessionPage({ studyData, onNavigate }: StudySessionPageProps) {
   const { data, rawText, sourceType, title, selectedOutputs, parseError } = studyData || {};
 
-  const availableTabs = selectedOutputs?.filter(t => data?.[t]) || [];
-  const [activeTab, setActiveTab] = useState(availableTabs[0] || 'notes');
-  const [saved, setSaved] = useState(false);
+  const availableTabs: string[] = selectedOutputs?.filter((t: string) => data?.[t]) || [];
+  const [activeTab, setActiveTab] = useState<string>(availableTabs[0] || 'notes');
+  const [saved, setSaved] = useState<boolean>(false);
 
   if (!studyData) {
     return (
@@ -42,14 +47,14 @@ export default function StudySessionPage({ studyData, onNavigate }) {
     storage.saveToLibrary({
       title,
       sourceType,
-      selectedOutputs: availableTabs,
-      data,
+      sourceRef: sourceType === 'web' || sourceType === 'youtube' ? data.url || '' : '',
+      results: data,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const TAB_LABELS = {
+  const TAB_LABELS: Record<string, string> = {
     notes: '📝 Notes',
     flashcards: '🃏 Flashcards',
     quiz: '❓ Quiz',
@@ -98,16 +103,16 @@ export default function StudySessionPage({ studyData, onNavigate }) {
 }
 
 /* ---------- Notes ---------- */
-function NotesView({ notes }) {
+function NotesView({ notes }: { notes: any }) {
   return (
     <div>
-      {notes.sections?.map((section, i) => (
+      {notes.sections?.map((section: any, i: number) => (
         <div key={i} className="notes-section">
           <h3>{section.heading}</h3>
           {section.body && <p className="notes-body">{section.body}</p>}
           {section.bullets?.length > 0 && (
             <ul className="notes-bullets">
-              {section.bullets.map((b, j) => <li key={j}>{b}</li>)}
+              {section.bullets.map((b: string, j: number) => <li key={j}>{b}</li>)}
             </ul>
           )}
         </div>
@@ -117,10 +122,10 @@ function NotesView({ notes }) {
 }
 
 /* ---------- Flashcards ---------- */
-function FlashcardsView({ flashcards }) {
-  const [flippedSet, setFlippedSet] = useState(new Set());
+function FlashcardsView({ flashcards }: { flashcards: any[] }) {
+  const [flippedSet, setFlippedSet] = useState<Set<number>>(new Set());
 
-  const toggle = (i) => {
+  const toggle = (i: number) => {
     setFlippedSet(prev => {
       const next = new Set(prev);
       next.has(i) ? next.delete(i) : next.add(i);
@@ -154,17 +159,17 @@ function FlashcardsView({ flashcards }) {
 }
 
 /* ---------- Quiz ---------- */
-function QuizView({ quiz }) {
-  const [answers, setAnswers] = useState({});
-  const [showResults, setShowResults] = useState(false);
+function QuizView({ quiz }: { quiz: any[] }) {
+  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [showResults, setShowResults] = useState<boolean>(false);
 
-  const handleSelect = (qIdx, optIdx) => {
+  const handleSelect = (qIdx: number, optIdx: number) => {
     if (answers[qIdx] !== undefined) return;
     setAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
   };
 
   const answeredAll = Object.keys(answers).length === quiz.length;
-  const score = quiz.reduce((acc, q, i) => acc + (answers[i] === q.correct ? 1 : 0), 0);
+  const score = quiz.reduce((acc: number, q: any, i: number) => acc + (answers[i] === q.correct ? 1 : 0), 0);
 
   return (
     <div>
@@ -175,7 +180,7 @@ function QuizView({ quiz }) {
               <div className="quiz-question-number">Question {i + 1} of {quiz.length}</div>
               <div className="quiz-question-text">{q.question}</div>
               <div className="quiz-options">
-                {q.options.map((opt, j) => {
+                {q.options.map((opt: string, j: number) => {
                   let cls = 'quiz-option';
                   if (answers[i] !== undefined) {
                     cls += ' disabled';
@@ -226,7 +231,7 @@ function QuizView({ quiz }) {
 }
 
 /* ---------- Summary ---------- */
-function SummaryView({ summary }) {
+function SummaryView({ summary }: { summary: any }) {
   return (
     <div>
       {summary.tldr && (
@@ -236,7 +241,7 @@ function SummaryView({ summary }) {
       {summary.keyPoints?.length > 0 && (
         <div className="key-points">
           <h3 style={{ marginBottom: 16 }}>Key Points</h3>
-          {summary.keyPoints.map((point, i) => (
+          {summary.keyPoints.map((point: string, i: number) => (
             <div key={i} className="key-point">
               <span className="key-point-number">{i + 1}</span>
               <span className="key-point-text">{point}</span>
@@ -249,7 +254,7 @@ function SummaryView({ summary }) {
         <div>
           <h3 style={{ marginBottom: 16 }}>Key Terms Glossary</h3>
           <div className="terms-grid">
-            {summary.terms.map((term, i) => (
+            {summary.terms.map((term: any, i: number) => (
               <div key={i} className="term-card">
                 <div className="term-name">{term.name}</div>
                 <div className="term-def">{term.definition}</div>
