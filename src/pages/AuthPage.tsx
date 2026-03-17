@@ -87,7 +87,7 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
             />
           </div>
 
-          <button type="submit" className="primary-button full-width" disabled={loading}>
+          <button type="submit" className="btn btn-primary full-width" disabled={loading}>
             {loading ? (
               <span className="spinner"></span>
             ) : isLogin ? (
@@ -104,7 +104,7 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
 
         <button 
           onClick={handleGuestLogin} 
-          className="secondary-button full-width guest-button"
+          className="btn btn-secondary full-width guest-button"
         >
           Continue as Guest
           <span className="guest-tooltip">History won't be saved</span>
