@@ -973,10 +973,45 @@ h3 { font-size: 1.2rem; }
   font-family: var(--font-body);
   transition: all var(--transition-fast);
 }
-.form-group input:focus {
+.form-group input:focus, .form-group .select:focus {
   border-color: var(--accent);
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-dim);
+}
+.form-row {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.form-row .form-group {
+  margin-bottom: 0;
+}
+.flex-1 {
+  flex: 1;
+}
+.password-input-wrapper {
+  position: relative;
+}
+.password-input-wrapper input {
+  padding-right: 48px;
+}
+.password-toggle {
+  position: absolute;
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+.password-toggle:hover {
+  color: var(--text-primary);
 }
 .auth-error {
   background: rgba(231, 76, 60, 0.1);

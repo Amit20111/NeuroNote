@@ -135,7 +135,7 @@ function MainApp() {
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
         }}>
-          Powered by Gemini
+          Powered by NeuroNote
         </div>
       </aside>
 

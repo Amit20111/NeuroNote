@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 // @desc    Register user
 router.post('/signup', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, firstName, lastName, gender } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Please enter all fields' });
@@ -29,7 +29,10 @@ router.post('/signup', async (req, res) => {
     // Create new user (works for both Mongoose and local DB wrapper)
     const savedUser = await User.create({
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      firstName,
+      lastName,
+      gender
     });
 
     // Create token
@@ -43,7 +46,10 @@ router.post('/signup', async (req, res) => {
       token,
       user: {
         id: savedUser._id,
-        email: savedUser.email
+        email: savedUser.email,
+        firstName: savedUser.firstName,
+        lastName: savedUser.lastName,
+        gender: savedUser.gender
       }
     });
   } catch (error) {
@@ -85,7 +91,10 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         id: user._id,
-        email: user.email
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender
       }
     });
   } catch (error) {
