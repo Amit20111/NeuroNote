@@ -30,12 +30,10 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Content is required' });
     }
 
-    const newEntry = new Library({
+    const savedEntry = await Library.create({
       userId: req.user.id,
       content
     });
-
-    const savedEntry = await newEntry.save();
     // Return lean object format
     res.status(201).json(savedEntry.toObject());
   } catch (error) {

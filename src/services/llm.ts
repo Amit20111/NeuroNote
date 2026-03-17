@@ -10,6 +10,7 @@ function buildPrompt(content: string, selectedOutputs: string[], settings: AppSe
 
 Generate ONLY these output types: ${outputList}
 
+${selectedOutputs.includes('notes') ? `IMPORTANT FOR NOTES: Extract highly comprehensive and extensive notes. Do not summarize briefly. Instead, create large, detailed sections capturing all nuances, topics, subtopics, and examples. The notes should be thorough enough to replace watching a 1-hour long video.` : ''}
 ${selectedOutputs.includes('flashcards') ? `Generate exactly ${flashcardCount} flashcards.` : ''}
 ${selectedOutputs.includes('quiz') ? `Generate exactly ${quizCount} quiz questions with 4 options each.` : ''}
 
@@ -40,8 +41,12 @@ export async function generateStudyMaterials(content: string, selectedOutputs: s
   const apiKey = GROQ_API_KEY;
   const model = GROQ_MODEL;
 
+  // Truncate content to roughly ~10,000 tokens (approx 40,000 characters) to prevent Groq free tier TPM rate limits
+  const maxSafeLength = 35000;
+  const safeContent = content.length > maxSafeLength ? content.substring(0, maxSafeLength) + '\n\n...[Content truncated due to API limits]...' : content;
+
   const settings = storage.getSettings();
-  const prompt = buildPrompt(content, selectedOutputs, settings);
+  const prompt = buildPrompt(safeContent, selectedOutputs, settings);
 
   // Standard OpenAI-compatible payload
   const body = {

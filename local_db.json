@@ -13,5 +13,199 @@
       "createdAt": "2026-03-17T13:03:52.132Z"
     }
   ],
-  "library": []
+  "library": [
+    {
+      "userId": "adx24fjlammumiq84",
+      "content": {
+        "title": "PDF: Personaplex paper.pdf",
+        "sourceType": "pdf",
+        "sourceRef": "",
+        "results": {
+          "notes": {
+            "sections": [
+              {
+                "heading": "Introduction",
+                "body": "Recent advances in duplex speech models have enabled real-time, low-latency speech-to-speech conversation systems that approximate natural human interaction. These systems integrate ASR, LLMs, and TTS into a unified pipeline, enabling agents to respond with high naturalness and low turn-taking delay. However, current duplex systems are generally limited to a fixed voice identity and role, restricting their use in structured or role-driven applications such as customer service, multi-character interactions, and personalized assistants.",
+                "bullets": [
+                  "Duplex speech models enable real-time, low-latency speech-to-speech conversation systems.",
+                  "Current duplex systems are limited to a fixed voice identity and role."
+                ]
+              },
+              {
+                "heading": "Related Work",
+                "body": "Cascaded ASR-LLM-TTS systems leverage the reasoning ability of LLMs and the naturalness of dedicated TTS models, but inevitably lose paralinguistic information, reducing dialog naturalness. To address this, several approaches have been proposed to improve conversational quality. Streaming TTS models reduce LLM → TTS latency and support voice cloning.",
+                "bullets": [
+                  "Cascaded ASR-LLM-TTS systems have limitations in conversational quality.",
+                  "Streaming TTS models can improve conversational quality."
+                ]
+              },
+              {
+                "heading": "PersonaPlex",
+                "body": "We propose PersonaPlex, a duplex-style multimodal model that follows the Moshi architecture by receiving three input streams: user audio, agent text, and agent audio. An overview of the architecture is shown in Figure 1. To jointly enable role conditioning and voice control, we introduce a Hybrid System Prompt combining textual role descriptions with audio voice examples.",
+                "bullets": [
+                  "PersonaPlex is a duplex-style multimodal model.",
+                  "The Hybrid System Prompt enables role conditioning and voice control."
+                ]
+              },
+              {
+                "heading": "Experiments and Results",
+                "body": "We train PersonaPlex by first initializing neural network weights to those of Moshi, followed by fine-tuning using our hybrid system prompt on synthetic dialogs generated using the approach presented in Section 3.2. The full training dataset has 1840 hours of customer service dialog interactions across 105,410 dialogs, and 410 hours of general Question-Answering dialogs across 39,322 dialogs.",
+                "bullets": [
+                  "PersonaPlex is trained on a large-scale synthetic dataset.",
+                  "The model achieves state-of-the-art performance on metrics related to human-like user interactivity."
+                ]
+              }
+            ]
+          },
+          "flashcards": [
+            {
+              "question": "What is PersonaPlex?",
+              "answer": "A full duplex speech-to-speech conversational model that enables zero-shot voice cloning and fine-grained role conditioning through hybrid text–audio system prompts."
+            },
+            {
+              "question": "What is the limitation of current duplex systems?",
+              "answer": "Current duplex systems are generally limited to a fixed voice identity and role, restricting their use in structured or role-driven applications."
+            },
+            {
+              "question": "What is the Hybrid System Prompt?",
+              "answer": "A combination of textual role descriptions with audio voice examples that enables role conditioning and voice control."
+            },
+            {
+              "question": "What is the architecture of PersonaPlex?",
+              "answer": "A duplex-style multimodal model that follows the Moshi architecture and receives three input streams: user audio, agent text, and agent audio."
+            },
+            {
+              "question": "How is PersonaPlex trained?",
+              "answer": "By first initializing neural network weights to those of Moshi, followed by fine-tuning using the hybrid system prompt on synthetic dialogs."
+            },
+            {
+              "question": "What is the size of the training dataset?",
+              "answer": "The full training dataset has 1840 hours of customer service dialog interactions across 105,410 dialogs, and 410 hours of general Question-Answering dialogs across 39,322 dialogs."
+            },
+            {
+              "question": "What is the evaluation metric for dialog naturalness?",
+              "answer": "Dialogue Mean Opinion Score (DMOS) with human evaluators."
+            },
+            {
+              "question": "What is the evaluation metric for speaker similarity?",
+              "answer": "WavLM-TDNN speaker verification model."
+            },
+            {
+              "question": "What is the Service-Duplex-Bench benchmark?",
+              "answer": "An extension to the Full-Duplex-Bench benchmark that covers real-world multi-role customer service scenarios."
+            },
+            {
+              "question": "What is the result of PersonaPlex on the Full-Duplex-Bench benchmark?",
+              "answer": "PersonaPlex achieves state-of-the-art performance on metrics related to human-like user interactivity."
+            }
+          ],
+          "quiz": [
+            {
+              "question": "What is the main limitation of current duplex speech models?",
+              "options": [
+                "A) Limited voice identity",
+                "B) Limited role conditioning",
+                "C) Limited voice identity and role conditioning",
+                "D) Limited naturalness"
+              ],
+              "correct": 2,
+              "explanation": "Current duplex speech models are limited to a fixed voice identity and role, restricting their use in structured or role-driven applications."
+            },
+            {
+              "question": "What is the purpose of the Hybrid System Prompt in PersonaPlex?",
+              "options": [
+                "A) To enable role conditioning",
+                "B) To enable voice cloning",
+                "C) To combine textual role descriptions with audio voice examples",
+                "D) To improve dialog naturalness"
+              ],
+              "correct": 2,
+              "explanation": "The Hybrid System Prompt combines textual role descriptions with audio voice examples to enable role conditioning and voice control."
+            },
+            {
+              "question": "How is PersonaPlex trained?",
+              "options": [
+                "A) Using a large-scale synthetic dataset",
+                "B) Using a small-scale real-world dataset",
+                "C) Using a combination of synthetic and real-world datasets",
+                "D) Using a pre-trained model"
+              ],
+              "correct": 0,
+              "explanation": "PersonaPlex is trained on a large-scale synthetic dataset."
+            },
+            {
+              "question": "What is the result of PersonaPlex on the Service-Duplex-Bench benchmark?",
+              "options": [
+                "A) PersonaPlex outperforms all models",
+                "B) PersonaPlex underperforms all models",
+                "C) PersonaPlex performs similarly to other models",
+                "D) PersonaPlex outperforms most models except Gemini Live"
+              ],
+              "correct": 3,
+              "explanation": "PersonaPlex outperforms most models except Gemini Live on the Service-Duplex-Bench benchmark."
+            },
+            {
+              "question": "What is the evaluation metric for speaker similarity in PersonaPlex?",
+              "options": [
+                "A) DMOS",
+                "B) WavLM-TDNN",
+                "C) SSIM",
+                "D) GPT-4o"
+              ],
+              "correct": 1,
+              "explanation": "The WavLM-TDNN speaker verification model is used to evaluate speaker similarity in PersonaPlex."
+            },
+            {
+              "question": "What is the size of the training dataset for PersonaPlex?",
+              "options": [
+                "A) 100 hours",
+                "B) 1000 hours",
+                "C) 1840 hours",
+                "D) 410 hours"
+              ],
+              "correct": 2,
+              "explanation": "The full training dataset for PersonaPlex has 1840 hours of customer service dialog interactions."
+            },
+            {
+              "question": "What is the architecture of PersonaPlex?",
+              "options": [
+                "A) A simple neural network",
+                "B) A duplex-style multimodal model",
+                "C) A cascaded ASR-LLM-TTS model",
+                "D) A streaming TTS model"
+              ],
+              "correct": 1,
+              "explanation": "PersonaPlex is a duplex-style multimodal model that follows the Moshi architecture."
+            }
+          ],
+          "summary": {
+            "tldr": "PersonaPlex is a full duplex speech-to-speech conversational model that enables zero-shot voice cloning and fine-grained role conditioning through hybrid text–audio system prompts.",
+            "keyPoints": [
+              "PersonaPlex is a duplex-style multimodal model.",
+              "The model uses a Hybrid System Prompt to enable role conditioning and voice control.",
+              "PersonaPlex is trained on a large-scale synthetic dataset.",
+              "The model achieves state-of-the-art performance on metrics related to human-like user interactivity."
+            ],
+            "terms": [
+              {
+                "name": "Duplex Speech Model",
+                "definition": "A speech-to-speech conversational model that enables real-time, low-latency conversation."
+              },
+              {
+                "name": "Hybrid System Prompt",
+                "definition": "A combination of textual role descriptions with audio voice examples that enables role conditioning and voice control."
+              },
+              {
+                "name": "PersonaPlex",
+                "definition": "A full duplex speech-to-speech conversational model that enables zero-shot voice cloning and fine-grained role conditioning through hybrid text–audio system prompts."
+              }
+            ]
+          }
+        },
+        "date": "2026-03-17T13:15:56.880Z"
+      },
+      "_id": "uluhudr5cmmumy9hf",
+      "createdAt": "2026-03-17T13:15:56.931Z"
+    }
+  ]
 }
