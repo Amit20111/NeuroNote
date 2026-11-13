@@ -1,6 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../services/api';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts?: {
+        id?: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: { credential?: string }) => void;
+          }) => void;
+          renderButton: (
+            parent: HTMLElement,
+            options: { theme?: string; size?: string; width?: number; text?: string }
+          ) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 interface AuthPageProps {
   onNavigate: (route: string) => void;
@@ -16,8 +37,74 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
   const { login, continueAsGuest } = useAuth();
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !googleButtonRef.current) return;
+
+    let cancelled = false;
+    const renderGoogleButton = () => {
+      if (cancelled || !googleButtonRef.current || !window.google?.accounts?.id) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: async ({ credential }) => {
+          if (!credential) {
+            setError('Google sign-in did not return a credential.');
+            return;
+          }
+          setError('');
+          setLoading(true);
+          try {
+            const data = await apiRequest('/auth/google', {
+              method: 'POST',
+              body: JSON.stringify({ credential }),
+            });
+            login(data.user, data.token);
+            onNavigate('');
+          } catch (err: any) {
+            setError(err.message || 'Google sign-in failed');
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+      googleButtonRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: 320,
+        text: 'continue_with',
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      renderGoogleButton();
+      return () => { cancelled = true; };
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src="https://accounts.google.com/gsi/client"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', renderGoogleButton);
+      return () => {
+        cancelled = true;
+        existingScript.removeEventListener('load', renderGoogleButton);
+      };
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.addEventListener('load', renderGoogleButton);
+    document.head.appendChild(script);
+
+    return () => {
+      cancelled = true;
+      script.removeEventListener('load', renderGoogleButton);
+    };
+  }, [login, onNavigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +247,13 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
         <div className="auth-divider">
           <span>or</span>
         </div>
+
+        {GOOGLE_CLIENT_ID && (
+          <div
+            ref={googleButtonRef}
+            style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}
+          />
+        )}
 
         <button 
           onClick={handleGuestLogin} 

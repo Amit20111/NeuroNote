@@ -1,93 +1,19 @@
 const express = require('express');
-const router = express.Router();
 const { User } = require('../db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
+function createAuthRouter(fetchImpl = fetch, UserModel = User) {
+  const router = express.Router();
+  const JWT_SECRET = process.env.JWT_SECRET;
 
-// @route   POST /api/auth/signup
-// @desc    Register user
-router.post('/signup', async (req, res) => {
-  try {
-    const { email, password, firstName, lastName, gender } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Please enter all fields' });
-    }
-
-    // Check for existing user
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user (works for both Mongoose and local DB wrapper)
-    const savedUser = await User.create({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      gender
-    });
-
-    // Create token
-    const token = jwt.sign(
-      { id: savedUser._id },
-      JWT_SECRET,
-      { expiresIn: '7d' } 
-    );
-
-    res.status(201).json({
-      token,
-      user: {
-        id: savedUser._id,
-        email: savedUser.email,
-        firstName: savedUser.firstName,
-        lastName: savedUser.lastName,
-        gender: savedUser.gender
-      }
-    });
-  } catch (error) {
-    console.error('Signup error:', error);
-    res.status(500).json({ error: 'Server error during signup' });
-  }
-});
-
-// @route   POST /api/auth/login
-// @desc    Login user
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Please enter all fields' });
-    }
-
-    // Check for existing user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-
-    // Validate password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-
-    // Create token
+  function buildAuthResponse(user) {
     const token = jwt.sign(
       { id: user._id },
       JWT_SECRET,
-      { expiresIn: '7d' } 
+      { expiresIn: '7d' }
     );
-
-    res.status(200).json({
+    return {
       token,
       user: {
         id: user._id,
@@ -96,11 +22,124 @@ router.post('/login', async (req, res) => {
         lastName: user.lastName,
         gender: user.gender
       }
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error during login' });
+    };
   }
-});
 
-module.exports = router;
+  // @route   POST /api/auth/signup
+  // @desc    Register user
+  router.post('/signup', async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, gender } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Please enter all fields' });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const existingUser = await UserModel.findOne({ email: normalizedEmail });
+      if (existingUser) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      const savedUser = await UserModel.create({
+        email: normalizedEmail,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        gender,
+        authProvider: 'local'
+      });
+
+      res.status(201).json(buildAuthResponse(savedUser));
+    } catch (error) {
+      console.error('Signup error:', error);
+      res.status(500).json({ error: 'Server error during signup' });
+    }
+  });
+
+  // @route   POST /api/auth/login
+  // @desc    Login user
+  router.post('/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Please enter all fields' });
+      }
+
+      const normalizedEmail = String(email).trim().toLowerCase();
+      const user = await UserModel.findOne({ email: normalizedEmail });
+      if (!user) {
+        return res.status(400).json({ error: 'Invalid credentials' });
+      }
+
+      if (!user.password) {
+        return res.status(400).json({ error: 'This account uses Google Sign-In. Please continue with Google.' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: 'Invalid credentials' });
+      }
+
+      res.status(200).json(buildAuthResponse(user));
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Server error during login' });
+    }
+  });
+
+  // @route   POST /api/auth/google
+  // @desc    Authenticate with Google ID token
+  router.post('/google', async (req, res) => {
+    try {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        return res.status(503).json({ error: 'Google Sign-In is not configured on this server.' });
+      }
+
+      const { credential } = req.body || {};
+      if (!credential || typeof credential !== 'string') {
+        return res.status(400).json({ error: 'Missing Google credential' });
+      }
+
+      const tokenInfoUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`;
+      const response = await fetchImpl(tokenInfoUrl, { signal: AbortSignal.timeout(10000) });
+      if (!response.ok) {
+        return res.status(401).json({ error: 'Invalid Google token' });
+      }
+
+      const payload = await response.json();
+      const isEmailVerified = payload.email_verified === true || payload.email_verified === 'true';
+      if (!payload.email || payload.aud !== clientId || !isEmailVerified) {
+        return res.status(401).json({ error: 'Google account verification failed' });
+      }
+
+      const normalizedEmail = String(payload.email).trim().toLowerCase();
+      let user = await UserModel.findOne({ email: normalizedEmail });
+      if (!user) {
+        user = await UserModel.create({
+          email: normalizedEmail,
+          firstName: payload.given_name || '',
+          lastName: payload.family_name || '',
+          googleId: payload.sub,
+          authProvider: 'google'
+        });
+      }
+
+      res.status(200).json(buildAuthResponse(user));
+    } catch (error) {
+      console.error('Google auth error:', error);
+      res.status(500).json({ error: 'Server error during Google sign-in' });
+    }
+  });
+
+  return router;
+}
+
+const defaultRouter = createAuthRouter();
+defaultRouter.createAuthRouter = createAuthRouter;
+module.exports = defaultRouter;
