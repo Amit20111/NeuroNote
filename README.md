@@ -4,6 +4,8 @@
 
 **Turn pasted text, PDFs, web articles, and YouTube page content into AI-generated notes, flashcards, quizzes, and summaries.**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-neuro--note--app.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://neuro-note-app.vercel.app/)
+
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)
