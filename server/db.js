@@ -1,83 +1,87 @@
-// Fallback in-memory database if MongoDB is not available
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const mongoose = require('mongoose');
+require('./models/User');
+require('./models/Library');
 
-const DB_FILE = path.join(__dirname, '..', 'local_db.json');
-
-// Initialize local DB if it doesn't exist
-if (!fs.existsSync(DB_FILE)) {
-  fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], library: [] }));
-}
-
-let isMongoConnected = false;
-
-// We export a wrapper that mimics Mongoose model APIs but falls back to JSON
-function getLocalDb() {
-  try {
-    const data = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (e) {
-    return { users: [], library: [] };
+// Select one backend before accepting requests. Local storage supports one server process.
+function createDatabase(file = path.join(__dirname, '..', 'local_db.json')) {
+  let isMongoConnected = false;
+  function read() {
+    if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify({ users: [], library: [] }), { flag: 'wx', mode: 0o600 });
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (!data || !Array.isArray(data.users) || !Array.isArray(data.library)) throw new Error('Invalid local database format. Restore a valid backup.');
+    return data;
   }
-}
-
-function saveLocalDb(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
-
-function generateId() {
-  return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-}
-
-const UserProxy = {
-  findOne: async (query) => {
-    if (isMongoConnected) return mongoose.model('User').findOne(query);
-    const db = getLocalDb();
-    if (query.email) {
-      return db.users.find(u => u.email === query.email) || null;
+  function save(data) {
+    const temporary = `${file}.${randomUUID()}.tmp`;
+    try {
+      fs.copyFileSync(file, `${file}.bak`);
+      const fd = fs.openSync(temporary, 'wx', 0o600);
+      try {
+        fs.writeFileSync(fd, JSON.stringify(data, null, 2));
+        fs.fsyncSync(fd);
+      } finally { fs.closeSync(fd); }
+      fs.renameSync(temporary, file);
+    } finally {
+      if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
     }
-    if (query._id) {
-      return db.users.find(u => u._id === query._id) || null;
-    }
-    return null;
-  },
-  create: async (data) => {
-    if (isMongoConnected) return mongoose.model('User').create(data);
-    const db = getLocalDb();
-    const newUser = { ...data, _id: generateId(), createdAt: new Date() };
-    db.users.push(newUser);
-    saveLocalDb(db);
-    return newUser;
   }
-};
-
-const LibraryProxy = {
-  find: (query) => {
-    const chain = {
-      sort: () => chain,
-      lean: async () => {
-        if (isMongoConnected) return mongoose.model('Library').find(query).sort({createdAt: -1}).lean();
-        const db = getLocalDb();
-        return db.library
-          .filter(l => l.userId === query.userId)
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return {
+    setMongoConnected(status) { isMongoConnected = status; },
+    User: {
+      async findOne(query) {
+        if (isMongoConnected) return mongoose.model('User').findOne(query);
+        return read().users.find(user => Object.entries(query).every(([key, value]) => user[key] === value)) || null;
+      },
+      async create(data) {
+        if (isMongoConnected) return mongoose.model('User').create(data);
+        const db = read();
+        if (db.users.some(user => user.email === data.email)) {
+          const error = new Error('User already exists');
+          error.code = 11000;
+          throw error;
+        }
+        const user = { ...data, _id: randomUUID(), createdAt: new Date().toISOString() };
+        db.users.push(user);
+        save(db);
+        return user;
       }
-    };
-    return chain;
-  },
-  create: async (data) => {
-    if (isMongoConnected) return mongoose.model('Library').create(data);
-    const db = getLocalDb();
-    const newEntry = { ...data, _id: generateId(), createdAt: new Date() };
-    db.library.push(newEntry);
-    saveLocalDb(db);
-    return { ...newEntry, toObject: () => newEntry };
-  }
-};
-
-module.exports = {
-  setMongoConnected: (status) => { isMongoConnected = status; },
-  User: UserProxy,
-  Library: LibraryProxy
-};
+    },
+    Library: {
+      find(query) {
+        const chain = {
+          sort: () => chain,
+          async lean() {
+            if (isMongoConnected) return mongoose.model('Library').find(query).sort({ createdAt: -1 }).lean();
+            return read().library.filter(entry => entry.userId === query.userId)
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          }
+        };
+        return chain;
+      },
+      async create(data) {
+        if (isMongoConnected) return mongoose.model('Library').create(data);
+        const db = read();
+        const entry = { ...data, _id: randomUUID(), createdAt: new Date().toISOString() };
+        db.library.push(entry);
+        save(db);
+        return { ...entry, toObject: () => entry };
+      },
+      async deleteOne(query) {
+        if (isMongoConnected) {
+          if (!mongoose.isValidObjectId(query._id)) return { deletedCount: 0 };
+          return mongoose.model('Library').deleteOne(query);
+        }
+        const db = read();
+        const index = db.library.findIndex(entry => entry._id === query._id && entry.userId === query.userId);
+        if (index < 0) return { deletedCount: 0 };
+        db.library.splice(index, 1);
+        save(db);
+        return { deletedCount: 1 };
+      }
+    }
+  };
+}
+module.exports = { ...createDatabase(), createDatabase };

@@ -2,16 +2,16 @@ import { useState } from 'react';
 import storage from '../services/storage';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import type { NavigateData, StudyData } from '../types/study';
+import { exportFlashcardsCsv, exportStudyMarkdown } from '../utils/exportStudy';
 
 interface StudySessionPageProps {
-  studyData: any;
-  onNavigate: (path: string, data?: any) => void;
+  studyData: StudyData | null;
+  onNavigate: (path: string, data?: NavigateData) => void;
 }
 
 export default function StudySessionPage({ studyData, onNavigate }: StudySessionPageProps) {
-  const { data, rawText, sourceType, title, selectedOutputs, parseError } = studyData || {};
-
-  const availableTabs: string[] = selectedOutputs?.filter((t: string) => data?.[t]) || [];
+  const availableTabs: string[] = studyData?.selectedOutputs?.filter((t: string) => studyData.data?.[t]) || [];
   const [activeTab, setActiveTab] = useState<string>(availableTabs[0] || 'notes');
   const [saved, setSaved] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
@@ -30,7 +30,9 @@ export default function StudySessionPage({ studyData, onNavigate }: StudySession
     );
   }
 
-  if (parseError) {
+  const { data, rawText, sourceType, sourceRef, title, parseError } = studyData;
+
+  if (parseError || !data) {
     return (
       <div>
         <div className="page-header">
@@ -53,7 +55,7 @@ export default function StudySessionPage({ studyData, onNavigate }: StudySession
     const entryData = {
       title,
       sourceType,
-      sourceRef: sourceType === 'web' || sourceType === 'youtube' ? data.url || '' : '',
+      sourceRef: sourceRef || '',
       results: data,
       date: new Date().toISOString()
     };
@@ -88,10 +90,26 @@ export default function StudySessionPage({ studyData, onNavigate }: StudySession
           <h1>{title || 'Study Session'}</h1>
           <p>Your AI-generated study materials are ready</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-secondary btn-sm" onClick={() => onNavigate('')}>
             ← New
           </button>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => exportStudyMarkdown(title, data)}
+            title="Download study set as Markdown"
+          >
+            ⬇ Export .md
+          </button>
+          {Array.isArray(data.flashcards) && data.flashcards.length > 0 && (
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => exportFlashcardsCsv(title, data.flashcards)}
+              title="Download flashcards for Anki (CSV)"
+            >
+              ⬇ Anki .csv
+            </button>
+          )}
           <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saved || saving}>
             {saving ? 'Saving...' : saved ? '✓ Saved!' : '💾 Save to Library'}
           </button>

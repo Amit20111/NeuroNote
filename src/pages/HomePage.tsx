@@ -68,6 +68,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
   const processPdf = async (file: File) => {
     setPdfFile(file);
+    setPdfText('');
     setFetchingPdf(true);
     setError('');
     try {
@@ -77,12 +78,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        fullText += textContent.items.map((s: any) => s.str).join(' ') + '\\n';
+        fullText += textContent.items.map((s: any) => s.str).join(' ') + '\n';
       }
+      if (!fullText.trim()) throw new Error('No readable text');
       setPdfText(fullText);
     } catch (err) {
       console.error('Error processing PDF', err);
-      setError('Failed to extract text from PDF.');
+      setError('Could not extract text from this PDF. Scanned documents need text recognition first.');
       setPdfFile(null);
     } finally {
       setFetchingPdf(false);
@@ -115,14 +117,18 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         setFetchingUrl(false);
       } else if (activeTab === 'pdf') {
         if (!pdfText) { setError('Upload a valid PDF file and wait for text extraction'); setLoading(false); return; }
-        // Ensure the content fits in the context window (most models support at least 8k-16k, we'll cap at a safe limit if needed but let the API reject it otherwise or summarize it later)
         content = pdfText;
       } else if (activeTab === 'text') {
         if (!pasteText.trim()) { setError('Paste some text content'); setLoading(false); return; }
         content = pasteText.trim();
       }
 
-      const cacheKey = `${activeTab}:${content.length}:${content.substring(0, 50)}:${selectedOutputs.join(',')}`;
+      if (content.length > 500000) {
+        setError('Documents can contain up to 500,000 characters. Split larger documents into smaller files.');
+        return;
+      }
+
+      const cacheKey = JSON.stringify([activeTab, content, selectedOutputs, settings]);
       
       let results;
       if (generationCache.has(cacheKey)) {
@@ -130,11 +136,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       } else {
         results = await generateStudyMaterials(content, selectedOutputs);
         generationCache.set(cacheKey, results);
+        if (generationCache.size > 10) generationCache.delete(generationCache.keys().next().value!);
       }
 
       onNavigate('study', {
         data: results,
         sourceType,
+        sourceRef: activeTab === 'youtube' ? youtubeUrl.trim() : activeTab === 'web' ? webUrl.trim() : '',
         title: deriveTitle(activeTab, youtubeUrl, webUrl, pdfFile, pasteText),
         selectedOutputs,
       });
@@ -285,10 +293,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </div>
 
       {/* Generate Button */}
+      <p className="drop-subtext">Supports up to 500,000 characters. Large documents are processed in sections and may take several minutes.</p>
       <button
         className="btn btn-primary"
         onClick={handleGenerate}
-        disabled={loading || selectedOutputs.length === 0}
+        disabled={loading || fetchingPdf || selectedOutputs.length === 0}
         style={{ width: '100%', padding: '18px', fontSize: '1rem' }}
       >
         {loading

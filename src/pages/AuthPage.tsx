@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { API_URL } from '../services/api';
+import { apiRequest } from '../services/api';
 
 interface AuthPageProps {
   onNavigate: (route: string) => void;
@@ -27,17 +27,11 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/signup';
       const payload = isLogin ? { email, password } : { email, password, firstName, lastName, gender };
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      const data = await apiRequest(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Authentication failed');
-      }
 
       login(data.user, data.token);
       onNavigate(''); // Navigate to Dashboard/Home

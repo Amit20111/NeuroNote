@@ -19,6 +19,9 @@ export default function LibraryPage({ onNavigate }: LibraryPageProps) {
   const [library, setLibrary] = useState<LibraryEntry[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchLibrary();
@@ -33,11 +36,12 @@ export default function LibraryPage({ onNavigate }: LibraryPageProps) {
         // We map them to match expected format
         const formatted = data.map((d: any) => ({
           ...d.content,
-          _mongoId: d._id // store mongoId for deletion if needed later
+          id: d._id,
         }));
         setLibrary(formatted);
       } catch (err) {
         console.error('Failed to load library:', err);
+        setError('Unable to load your library. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -46,23 +50,28 @@ export default function LibraryPage({ onNavigate }: LibraryPageProps) {
     }
   };
 
-  const handleDelete = (id: string, mongoId?: string) => {
-    // Basic implementation: if guest, delete from local
-    if (isGuest) {
-      storage.deleteFromLibrary(id);
-      setLibrary(storage.getLibrary());
-    } else if (user && mongoId) {
-      // Deletion API not requested in prompt, assuming read-only/create-only for backend for now based on prompt specs.
-      // E.g., a GET /library and POST /library. 
-      // If we implement DELETE /library, we'd call it here.
+  const handleDelete = async (id: string) => {
+    if (deleting) return;
+    setDeleting(id);
+    setError('');
+    try {
+      if (isGuest) storage.deleteFromLibrary(id);
+      else if (user) await api.deleteFromLibrary(id);
+      else return;
+      setLibrary(previous => previous.filter(entry => entry.id !== id));
+      setDeleteConfirm(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete study set. Please try again.');
+    } finally {
+      setDeleting(null);
     }
-    setDeleteConfirm(null);
   };
 
   const handleOpen = (entry: LibraryEntry) => {
     onNavigate('study', {
       data: entry.results,
       sourceType: entry.sourceType,
+      sourceRef: entry.sourceRef,
       title: entry.title,
       selectedOutputs: entry.results ? Object.keys(entry.results) : [],
     });
@@ -96,11 +105,19 @@ export default function LibraryPage({ onNavigate }: LibraryPageProps) {
         </div>
         {isGuest && (
           <div className="banner banner-warning" style={{ margin: 0, padding: 'var(--space-sm) var(--space-md)' }}>
-            ⚠️ History won't be saved in Guest Mode
+            ⚠️ Guest study sets are saved only in this browser
           </div>
         )}
       </div>
 
+      {error && <div className="banner banner-error" role="alert">{error}</div>}
+      {library.length > 0 && (
+        <div className="input-group">
+          <label className="input-label" htmlFor="library-search">Search study sets</label>
+          <input id="library-search" className="input" type="search" placeholder="Search by title or source..." value={search} onChange={event => setSearch(event.target.value)} />
+        </div>
+      )}
+      {library.length > 0 && !library.some(entry => `${entry.title} ${entry.sourceType}`.toLowerCase().includes(search.trim().toLowerCase())) && <p>No study sets match your search.</p>}
       {library.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📚</div>
@@ -114,7 +131,7 @@ export default function LibraryPage({ onNavigate }: LibraryPageProps) {
         </div>
       ) : (
         <div className="library-grid">
-          {library.map((entry: any) => (
+          {library.filter(entry => `${entry.title} ${entry.sourceType}`.toLowerCase().includes(search.trim().toLowerCase())).map((entry: any) => (
             <div key={entry.id || entry._mongoId} className="library-card" onClick={() => handleOpen(entry)}>
               <div className="library-card-header">
                 <div className="library-card-title">{entry.title}</div>
@@ -139,8 +156,8 @@ export default function LibraryPage({ onNavigate }: LibraryPageProps) {
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)', marginRight: 'auto' }}>
                       Delete?
                     </span>
-                    <button className="btn btn-danger btn-sm" onClick={() => entry.id && handleDelete(entry.id, entry._mongoId)}>
-                      Yes
+                    <button className="btn btn-danger btn-sm" disabled={!!deleting} onClick={() => entry.id && handleDelete(entry.id)}>
+                      {deleting === entry.id ? 'Deleting...' : 'Yes'}
                     </button>
                     <button className="btn btn-secondary btn-sm" onClick={() => setDeleteConfirm(null)}>
                       No

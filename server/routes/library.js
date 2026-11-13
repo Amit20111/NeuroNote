@@ -1,7 +1,8 @@
 const express = require('express');
-const router = express.Router();
-const { Library } = require('../db');
 const auth = require('../middleware/auth');
+
+function createLibraryRouter(Library = require('../db').Library) {
+const router = express.Router();
 
 // @route   GET /api/library
 // @desc    Get user's library entries
@@ -42,4 +43,18 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const result = await Library.deleteOne({ _id: req.params.id, userId: req.user.id });
+    if (!result.deletedCount) return res.status(404).json({ error: 'Study set not found' });
+    res.json({ deleted: true });
+  } catch (error) {
+    console.error('Delete library error:', error);
+    res.status(500).json({ error: 'Unable to delete study set' });
+  }
+});
+
+return router;
+}
+module.exports = createLibraryRouter();
+module.exports.createLibraryRouter = createLibraryRouter;

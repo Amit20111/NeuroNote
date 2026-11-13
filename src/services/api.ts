@@ -1,28 +1,38 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
-export const fetchWithAuth = async (endpoint: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
+export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers || {});
-  
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
   headers.set('Content-Type', 'application/json');
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    throw new Error('Cannot connect to NeuroNote. Make sure the app server is running, then try again.');
   }
 
-  return response.json();
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.error || (response.status >= 500
+      ? 'The NeuroNote server is unavailable. Please try again shortly.'
+      : `Request failed (${response.status}). Please try again.`));
+  }
+
+  if (data === null) throw new Error('NeuroNote received an unexpected server response. Please restart the app and try again.');
+  return data;
+};
+
+export const fetchWithAuth = (endpoint: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  const headers = new Headers(options.headers || {});
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return apiRequest(endpoint, { ...options, headers });
 };
 
 export const api = {
+  deleteFromLibrary: (id: string) => fetchWithAuth(`/library/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   // Library endpoints
   getLibrary: () => fetchWithAuth('/library'),
   saveToLibrary: (content: any) => fetchWithAuth('/library', {

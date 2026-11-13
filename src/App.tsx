@@ -2,6 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import './index.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage from './pages/AuthPage';
+import type { NavigateData, StudyData } from './types/study';
 
 // Lazy load pages for performance
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -29,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
 
 function MainApp() {
   const [route, setRoute] = useState<string>(getRoute());
-  const [studyData, setStudyData] = useState<any>(null); // Replace any broadly with proper StudyData
+  const [studyData, setStudyData] = useState<StudyData | null>(null);
   const [settingsWarning, setSettingsWarning] = useState<string>('');
 
   const { logout, user } = useAuth();
@@ -40,11 +41,11 @@ function MainApp() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  const navigate = (path: string, data?: any) => {
-    if (path === 'study' && data) {
+  const navigate = (path: string, data?: NavigateData) => {
+    if (path === 'study' && data && 'selectedOutputs' in data) {
       setStudyData(data);
     }
-    if (path === 'settings' && data?.warning) {
+    if (path === 'settings' && data && 'warning' in data && data.warning) {
       setSettingsWarning(data.warning);
     } else {
       setSettingsWarning('');
