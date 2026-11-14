@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # NeuroNote
 
@@ -123,6 +123,7 @@ Requires **Node.js 20.19+ or 22.12+** and **npm**. MongoDB is optional for local
 | `GET`    | `/api/health`      | Public     | Health check (`{ "status": "ok" }`)              |
 | `POST`   | `/api/auth/signup` | Public     | Register a new user account                      |
 | `POST`   | `/api/auth/login`  | Public     | Authenticate and receive a JWT                   |
+| `POST`   | `/api/auth/google` | Public     | Authenticate with a Google ID token              |
 | `POST`   | `/api/generate`    | Public     | Generate notes, flashcards, quizzes, and summary |
 | `GET`    | `/api/library`     | Bearer JWT | Fetch saved study sets for the current user      |
 | `POST`   | `/api/library`     | Bearer JWT | Save a study set to the user's library           |
@@ -132,23 +133,29 @@ Requires **Node.js 20.19+ or 22.12+** and **npm**. MongoDB is optional for local
 
 ## Project Structure
 
+Organized by layer (**Frontend → Backend → Database → Scripts & Config**):
+
 ```text
 NeuroNote-main/
-├── public/                 # Static icons and assets
-├── scripts/
-│   └── dev.mjs             # Combined frontend + backend dev runner
-├── server/
-│   ├── middleware/auth.js  # JWT authentication middleware
-│   ├── models/             # Mongoose schemas (User, Library)
-│   ├── routes/             # Express routes (auth, generate, library)
-│   ├── test/               # Node test suite (db, generate, library)
-│   ├── db.js               # MongoDB + atomic local_db.json adapter
-│   └── index.js            # Express server entry point
-├── src/
+├── src/                    # Frontend (React + TypeScript + Vite)
 │   ├── context/            # AuthContext provider
 │   ├── pages/              # Auth, Home, StudySession, Library, Settings
-│   ├── services/           # API client, Jina reader, LLM, local storage
+│   ├── services/           # Centralized API client (api.ts), Jina reader, LLM, local storage
+│   ├── types/              # Shared TypeScript interfaces (StudyData)
+│   ├── utils/              # Study set export helpers (Markdown, Anki CSV)
 │   └── App.tsx             # Hash router and main layout
+├── public/                 # Static frontend icons and assets
+├── server/
+│   ├── index.js            # Backend: Express server entry point
+│   ├── middleware/auth.js  # Backend: JWT authentication middleware
+│   ├── routes/             # Backend: Express routes (auth, generate, library)
+│   ├── test/               # Backend & DB tests (auth, db, generate, library)
+│   ├── db.js               # Database: MongoDB + atomic local_db.json adapter
+│   └── models/             # Database: Mongoose schemas (User, Library)
+├── scripts/
+│   └── dev.mjs             # Dev runner: starts frontend + backend together
+├── .github/workflows/      # CI workflow (build, lint, server tests)
+├── vercel.json             # Frontend deployment config for Vercel
 └── .env.example            # Environment variable template
 ```
 

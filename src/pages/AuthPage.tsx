@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { apiRequest } from '../services/api';
+import { api } from '../services/api';
 
 declare global {
   interface Window {
@@ -57,10 +57,7 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
           setError('');
           setLoading(true);
           try {
-            const data = await apiRequest('/auth/google', {
-              method: 'POST',
-              body: JSON.stringify({ credential }),
-            });
+            const data = await api.googleLogin(credential);
             login(data.user, data.token);
             onNavigate('');
           } catch (err: any) {
@@ -112,13 +109,9 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/signup';
-      const payload = isLogin ? { email, password } : { email, password, firstName, lastName, gender };
-      const data = await apiRequest(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const data = isLogin
+        ? await api.login(email, password)
+        : await api.signup({ email, password, firstName, lastName, gender });
 
       login(data.user, data.token);
       onNavigate(''); // Navigate to Dashboard/Home

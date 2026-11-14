@@ -1,4 +1,14 @@
+import type { AppSettings, LibraryEntry } from './storage';
+
 export const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+
+export interface SignupPayload {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+}
 
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const headers = new Headers(options.headers || {});
@@ -32,11 +42,36 @@ export const fetchWithAuth = (endpoint: string, options: RequestInit = {}) => {
 };
 
 export const api = {
-  deleteFromLibrary: (id: string) => fetchWithAuth(`/library/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  // Library endpoints
-  getLibrary: () => fetchWithAuth('/library'),
-  saveToLibrary: (content: any) => fetchWithAuth('/library', {
+  // Health
+  health: () => apiRequest('/health'),
+
+  // Auth
+  login: (email: string, password: string) => apiRequest('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ content })
+    body: JSON.stringify({ email, password }),
+  }),
+  signup: (payload: SignupPayload) => apiRequest('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+  googleLogin: (credential: string) => apiRequest('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential }),
+  }),
+
+  // Generation
+  generate: (content: string, selectedOutputs: string[], settings: AppSettings) => fetchWithAuth('/generate', {
+    method: 'POST',
+    body: JSON.stringify({ content, selectedOutputs, settings }),
+  }),
+
+  // Library
+  getLibrary: () => fetchWithAuth('/library'),
+  saveToLibrary: (content: LibraryEntry) => fetchWithAuth('/library', {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  }),
+  deleteFromLibrary: (id: string) => fetchWithAuth(`/library/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
   }),
 };

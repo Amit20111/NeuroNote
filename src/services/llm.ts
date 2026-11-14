@@ -1,9 +1,6 @@
 ﻿import storage from './storage';
-import { fetchWithAuth } from './api';
+import { api } from './api';
 
 export async function generateStudyMaterials(content: string, selectedOutputs: string[]) {
-  return fetchWithAuth('/generate', {
-    method: 'POST',
-    body: JSON.stringify({ content, selectedOutputs, settings: storage.getSettings() }),
-  });
+  return api.generate(content, selectedOutputs, storage.getSettings());
 }
