@@ -1,4 +1,4 @@
-﻿import storage from './storage';
+import storage from './storage';
 import { api } from './api';
 
 export async function generateStudyMaterials(content: string, selectedOutputs: string[]) {

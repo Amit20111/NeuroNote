@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const env = loadEnv('development', root, '');
 let frontend;
 let stopping = false;
-const backend = fork(fileURLToPath(new URL('../server/index.js', import.meta.url)), [], {
+const backend = fork(fileURLToPath(new URL('../backend/index.js', import.meta.url)), [], {
   cwd: root,
   env: { ...process.env, ...env },
   stdio: ['inherit', 'inherit', 'inherit', 'ipc'],
@@ -42,7 +42,10 @@ try {
     });
   });
   if (!stopping) {
-    frontend = await createServer({ root, configFile: fileURLToPath(new URL('../vite.config.ts', import.meta.url)) });
+    frontend = await createServer({
+      root: fileURLToPath(new URL('../frontend', import.meta.url)),
+      configFile: fileURLToPath(new URL('../frontend/vite.config.ts', import.meta.url)),
+    });
     if (stopping) await frontend.close();
     else {
       await frontend.listen();

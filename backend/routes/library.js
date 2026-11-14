@@ -1,7 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 
-function createLibraryRouter(Library = require('../db').Library) {
+function createLibraryRouter(Library = require('../../database/db').Library) {
 const router = express.Router();
 
 // @route   GET /api/library

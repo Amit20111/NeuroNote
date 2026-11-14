@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const express = require('express');
-const { createDatabase } = require('../db');
+const { createDatabase } = require('../../database/db');
 
 test('Google sign-in verifies ID token, creates or reuses user, and guards password login', async t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'neuronote-auth-test-'));

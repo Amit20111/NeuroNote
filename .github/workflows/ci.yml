@@ -23,8 +23,8 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Install server dependencies
-        run: npm ci --prefix server
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
 
       - name: Type-check and build frontend
         run: npm run build
@@ -32,5 +32,5 @@ jobs:
       - name: Lint JavaScript files
         run: npm run lint
 
-      - name: Run server tests
-        run: npm test --prefix server
+      - name: Run backend tests
+        run: npm test --prefix backend

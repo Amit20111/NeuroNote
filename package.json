@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "dev:web": "vite --config vite.config.ts",
-    "server": "cd server && npm run dev",
-    "build": "tsc -b && vite build --config vite.config.ts",
+    "dev:web": "vite --config frontend/vite.config.ts frontend",
+    "server": "cd backend && npm run dev",
+    "build": "tsc -b && vite build --config frontend/vite.config.ts frontend",
     "lint": "eslint .",
-    "preview": "vite preview --config vite.config.ts"
+    "preview": "vite preview --config frontend/vite.config.ts frontend"
   },
   "dependencies": {
     "pdfjs-dist": "^4.4.168",

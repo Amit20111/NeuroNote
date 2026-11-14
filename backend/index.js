@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
-const { setMongoConnected } = require('./db');
+const { setMongoConnected } = require('../database/db');
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/neuronote';
 const databaseReady = mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 2000
@@ -44,7 +44,7 @@ const libraryRoutes = require('./routes/library');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/library', libraryRoutes);
-app.use('/api/generate', require('./routes/generate').createGenerationRouter());
+app.use('/api/generate', require('../ai/generate').createGenerationRouter());
 
 // Health check
 app.get('/api/health', (req, res) => {

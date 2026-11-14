@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { createDatabase } = require('../db');
+const { createDatabase } = require('../../database/db');
 const { createLibraryRouter } = require('../routes/library');
 
 test('library API saves, lists and deletes only entries owned by the authenticated user', async t => {

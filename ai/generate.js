@@ -1,5 +1,6 @@
-const express = require('express');
-const rateLimit = require('express-rate-limit');
+const path = require('node:path');
+const express = require(require.resolve('express', { paths: [__dirname, path.join(__dirname, '..', 'backend')] }));
+const rateLimit = require(require.resolve('express-rate-limit', { paths: [__dirname, path.join(__dirname, '..', 'backend')] }));
 
 const shapes = {
   notes: { sections: [{ heading: 'Topic', body: 'Detailed explanation', bullets: ['Key point'] }] },

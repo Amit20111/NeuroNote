@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+const path = require('node:path');
+const mongoose = require(require.resolve('mongoose', { paths: [__dirname, path.join(__dirname, '..', '..', 'backend')] }));
 
 const librarySchema = new mongoose.Schema({
   userId: {

@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
-const mongoose = require('mongoose');
+const mongoose = require(require.resolve('mongoose', { paths: [__dirname, path.join(__dirname, '..', 'backend')] }));
 require('./models/User');
 require('./models/Library');
 

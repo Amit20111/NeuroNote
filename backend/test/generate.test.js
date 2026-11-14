@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
-const { createGenerationRouter, splitSections } = require('../routes/generate');
+const { createGenerationRouter, splitSections } = require('../../ai/generate');
 
 test('generation validates requests, keeps credentials server-side, and handles provider failures', async t => {
   const previous = process.env.GROQ_API_KEY;

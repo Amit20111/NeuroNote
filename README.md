@@ -133,28 +133,34 @@ Requires **Node.js 20.19+ or 22.12+** and **npm**. MongoDB is optional for local
 
 ## Project Structure
 
-Organized by layer (**Frontend → Backend → Database → Scripts & Config**):
+Organized by layer (**Frontend → Backend → Database → AI → Scripts & Config**):
 
 ```text
 NeuroNote-main/
-├── src/                    # Frontend (React + TypeScript + Vite)
-│   ├── context/            # AuthContext provider
-│   ├── pages/              # Auth, Home, StudySession, Library, Settings
-│   ├── services/           # Centralized API client (api.ts), Jina reader, LLM, local storage
-│   ├── types/              # Shared TypeScript interfaces (StudyData)
-│   ├── utils/              # Study set export helpers (Markdown, Anki CSV)
-│   └── App.tsx             # Hash router and main layout
-├── public/                 # Static frontend icons and assets
-├── server/
-│   ├── index.js            # Backend: Express server entry point
-│   ├── middleware/auth.js  # Backend: JWT authentication middleware
-│   ├── routes/             # Backend: Express routes (auth, generate, library)
-│   ├── test/               # Backend & DB tests (auth, db, generate, library)
-│   ├── db.js               # Database: MongoDB + atomic local_db.json adapter
-│   └── models/             # Database: Mongoose schemas (User, Library)
+├── frontend/               # Frontend (React + TypeScript + Vite)
+│   ├── public/             # Static frontend icons and assets
+│   ├── src/
+│   │   ├── context/        # AuthContext provider
+│   │   ├── pages/          # Auth, Home, StudySession, Library, Settings
+│   │   ├── services/       # Centralized API client (api.ts), Jina reader, LLM, local storage
+│   │   ├── types/          # Shared TypeScript interfaces (StudyData)
+│   │   ├── utils/          # Study set export helpers (Markdown, Anki CSV)
+│   │   └── App.tsx         # Hash router and main layout
+│   ├── index.html
+│   └── vite.config.ts
+├── backend/                # Backend (Express API & Auth)
+│   ├── middleware/auth.js  # JWT authentication middleware
+│   ├── routes/             # Express routes (auth, library)
+│   ├── test/               # Node test suite (auth, db, generate, library)
+│   └── index.js            # Express server entry point
+├── database/               # Database Layer
+│   ├── models/             # Mongoose schemas (User, Library)
+│   └── db.js               # MongoDB + atomic local_db.json adapter
+├── ai/                     # AI Generation Layer
+│   └── generate.js         # Groq API integration, chunking & validation
 ├── scripts/
 │   └── dev.mjs             # Dev runner: starts frontend + backend together
-├── .github/workflows/      # CI workflow (build, lint, server tests)
+├── .github/workflows/      # CI workflow (build, lint, backend tests)
 ├── vercel.json             # Frontend deployment config for Vercel
 └── .env.example            # Environment variable template
 ```
@@ -163,12 +169,12 @@ NeuroNote-main/
 
 ## Checks & Scripts
 
-| Command                    | Description                                                                       |
-| :------------------------- | :-------------------------------------------------------------------------------- |
-| `npm run dev`              | Start both the Express API and Vite dev server                                    |
-| `npm run build`            | Run TypeScript type checking (`tsc -b`) and build the frontend                    |
-| `npm run lint`             | Run ESLint across JavaScript files (including the CommonJS backend)               |
-| `npm test --prefix server` | Run isolated database and API tests using temporary files and mocked AI responses |
+| Command                     | Description                                                                       |
+| :-------------------------- | :-------------------------------------------------------------------------------- |
+| `npm run dev`               | Start both the Express API and Vite dev server                                    |
+| `npm run build`             | Run TypeScript type checking (`tsc -b`) and build the frontend                    |
+| `npm run lint`              | Run ESLint across JavaScript files (including backend, database, and AI layers)   |
+| `npm test --prefix backend` | Run isolated database and API tests using temporary files and mocked AI responses |
 
 ---
 
